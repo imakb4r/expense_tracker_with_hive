@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:expense_tracer_using_hive/controllers/db_helper.dart';
 import 'package:expense_tracer_using_hive/pages/add_transection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,24 +16,367 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  DbHelper dbHelper = DbHelper();
+
+  int totalBalance = 0;
+  int totalIncome = 0;
+  int totalExpense = 0;
+
+  getTotalBalance(Map entireData) {
+    totalBalance = 0;
+    totalExpense = 0;
+    totalIncome = 0;
+    entireData.forEach((key, value) {
+      if (value['type'] == 'Income') {
+        totalBalance += (value['amount'] as int);
+        totalIncome += (value['amount'] as int);
+      } else {
+        totalBalance -= (value['amount'] as int);
+        totalExpense += (value['amount'] as int);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 0.0,
       ),
+      backgroundColor: Color(0xffe2e7ef),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.of(context)
-            .push(MaterialPageRoute(builder: (context) => AddTranssection())),
+            .push(
+          MaterialPageRoute(
+            builder: (context) => AddTranssection(),
+          ),
+        )
+            .whenComplete(() {
+          setState(() {});
+        }),
         backgroundColor: Static.PrimaryColor,
         child: Icon(
           Icons.add,
           size: 32.0,
         ),
       ),
-      body: Center(
-        child: Text('No data'),
+      body: FutureBuilder<Map>(
+        future: dbHelper.fetch(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Unexpected Error'),
+            );
+          }
+          if (snapshot.hasData) {
+            if (snapshot.data!.isEmpty) {
+              return Center(
+                child: Text('No data provided'),
+              );
+            }
+            getTotalBalance(snapshot.data!);
+            return ListView(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            //padding: const EdgeInsets.all(12.0),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                color: Colors.white70),
+                            child: Image.asset('assets/face.png'), width: 64.0,
+                          ),
+                          SizedBox(
+                            width: 30.0,
+                          ),
+                          Text(
+                            'Hello My Friend',
+                            style: TextStyle(
+                              fontSize: 24.0,
+                              fontWeight: FontWeight.w700,
+                              color: Static.PrimaryMaterialColor[800],
+                            ),
+                          )
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(12.0),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            color: Colors.white70),
+                        child: Icon(
+                          Icons.settings,
+                          size: 32.0,
+                          color: Color(0xff3e454c),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.90,
+                  // color: Colors.amber,
+                  margin: EdgeInsets.all(12.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage('assets/bg.jpg'),
+                        fit: BoxFit.fill,
+                      ),
+                      gradient: LinearGradient(
+                        colors: [
+                          Static.PrimaryColor,
+                          Colors.blueAccent,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(15.0),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.grey.shade500,
+                            offset: const Offset(4.0, 4.0),
+                            blurRadius: 15.0,
+                            spreadRadius: 1.0),
+                        BoxShadow(
+                          color: Colors.white,
+                          offset: Offset(-4.0, -4.0),
+                          blurRadius: 15.0,
+                          spreadRadius: 1.0,
+                        ),
+                      ],
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 20.0,
+                      horizontal: 8.0,
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          "Total Balance",
+                          style: TextStyle(
+                              fontSize: 22.0,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          "Rs. $totalBalance",
+                          style: TextStyle(
+                              fontSize: 26.0,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600),
+                        ),
+                        SizedBox(
+                          height: 12.0,
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IncomeCard(totalIncome.toString()),
+                              ExpenseCard(totalExpense.toString()),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: Text(
+                    "Recent Transactions",
+                    style: TextStyle(
+                      fontSize: 26.0,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    reverse: true,
+                    itemCount: (snapshot.data!.length),
+                    itemBuilder: (context, index) {
+                      Map dataAtIndex = snapshot.data![index];
+                      return (dataAtIndex['type'] == 'Income')
+                          ? incomeTile(
+                              dataAtIndex['amount'], dataAtIndex['note'])
+                          : expenseTile(
+                              dataAtIndex['amount'], dataAtIndex["note"]);
+                    })
+              ],
+            );
+          } else {
+            return Center(
+              child: Text('Unexpected Error'),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Widget IncomeCard(String value) {
+    return Row(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.green,
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          padding: EdgeInsets.all(8.0),
+          child: Icon(
+            Icons.arrow_upward,
+            size: 28.0,
+            color: Colors.white,
+          ),
+          margin: EdgeInsets.only(
+            right: 8.0,
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Income",
+              style: TextStyle(
+                fontSize: 14.0,
+                color: Colors.black,
+              ),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20.0,
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        )
+      ],
+    );
+  }
+
+  Widget ExpenseCard(String value) {
+    return Row(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          padding: EdgeInsets.all(8.0),
+          child: Icon(
+            Icons.arrow_downward,
+            size: 28.0,
+            color: Colors.white,
+          ),
+          margin: EdgeInsets.only(
+            right: 8.0,
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Expense",
+              style: TextStyle(
+                fontSize: 14.0,
+                color: Colors.black,
+              ),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20.0,
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        )
+      ],
+    );
+  }
+
+  Widget expenseTile(int value, String note) {
+    return Container(
+      margin: EdgeInsets.all(8.0),
+      padding: EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: Color(0xffced4eb),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.arrow_circle_down_outlined,
+                size: 28.0,
+                color: Colors.red,
+              ),
+              SizedBox(
+                width: 4,
+              ),
+              Text("${note}"),
+            ],
+          ),
+          Text(
+            "- $value",
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget incomeTile(int value, String note) {
+    return Container(
+      margin: EdgeInsets.all(8.0),
+      padding: EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: Color(0xffced4eb),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.arrow_circle_up_outlined,
+                size: 28.0,
+                color: Colors.green,
+              ),
+              SizedBox(
+                width: 4,
+              ),
+              Text('$note'),
+            ],
+          ),
+          Text(
+            "+ $value",
+            style: TextStyle(
+              color: Colors.green,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+            ),
+          )
+        ],
       ),
     );
   }
