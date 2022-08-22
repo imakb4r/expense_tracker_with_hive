@@ -1,11 +1,7 @@
-import 'dart:ffi';
 
 import 'package:expense_tracer_using_hive/controllers/db_helper.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/src/foundation/key.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:expense_tracer_using_hive/static.dart' as Static;
 
 class AddTranssection extends StatefulWidget {
@@ -253,7 +249,7 @@ class _AddTranssectionState extends State<AddTranssection> {
                   await dbHelper.addData(amount!, note, type, selectDate);
                   Navigator.of(context).pop();
                 } else {
-                  print("Please provide required data");
+                  //print("Please provide required data");
                 }
               },
               child: Text(

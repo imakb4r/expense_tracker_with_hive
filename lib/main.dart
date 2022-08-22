@@ -2,7 +2,6 @@ import 'package:expense_tracer_using_hive/pages/homepage.dart';
 import 'package:expense_tracer_using_hive/themes.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:hive/hive.dart';
 
 void main() async {
   await Hive.initFlutter();

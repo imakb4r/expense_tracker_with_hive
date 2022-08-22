@@ -1,11 +1,6 @@
-import 'dart:math';
-
 import 'package:expense_tracer_using_hive/controllers/db_helper.dart';
 import 'package:expense_tracer_using_hive/pages/add_transection.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/foundation/key.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:expense_tracer_using_hive/static.dart' as Static;
 
 class HomePage extends StatefulWidget {
@@ -90,7 +85,8 @@ class _HomePageState extends State<HomePage> {
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(16),
                                 color: Colors.white70),
-                            child: Image.asset('assets/face.png'), width: 64.0,
+                            width: 64.0,
+                            child: Image.asset('assets/face.png'),
                           ),
                           SizedBox(
                             width: 30.0,
@@ -125,10 +121,6 @@ class _HomePageState extends State<HomePage> {
                   margin: EdgeInsets.all(12.0),
                   child: Container(
                     decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage('assets/bg.jpg'),
-                        fit: BoxFit.fill,
-                      ),
                       gradient: LinearGradient(
                         colors: [
                           Static.PrimaryColor,
@@ -160,15 +152,16 @@ class _HomePageState extends State<HomePage> {
                           "Total Balance",
                           style: TextStyle(
                               fontSize: 22.0,
-                              color: Colors.black,
+                              color: Colors.white70,
                               fontWeight: FontWeight.w600),
                         ),
                         Text(
-                          "Rs. $totalBalance",
+                          "₹$totalBalance",
                           style: TextStyle(
-                              fontSize: 26.0,
-                              color: Colors.black,
-                              fontWeight: FontWeight.w600),
+                            fontSize: 26.0,
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         SizedBox(
                           height: 12.0,
@@ -206,9 +199,9 @@ class _HomePageState extends State<HomePage> {
                     itemBuilder: (context, index) {
                       Map dataAtIndex = snapshot.data![index];
                       return (dataAtIndex['type'] == 'Income')
-                          ? incomeTile(
+                          ? newIncomeCard(
                               dataAtIndex['amount'], dataAtIndex['note'])
-                          : expenseTile(
+                          : expenseCard(
                               dataAtIndex['amount'], dataAtIndex["note"]);
                     })
               ],
@@ -228,17 +221,17 @@ class _HomePageState extends State<HomePage> {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: Colors.green,
+            color: Colors.white70,
             borderRadius: BorderRadius.circular(20.0),
           ),
           padding: EdgeInsets.all(8.0),
+          margin: EdgeInsets.only(
+            right: 8.0,
+          ),
           child: Icon(
             Icons.arrow_upward,
             size: 28.0,
-            color: Colors.white,
-          ),
-          margin: EdgeInsets.only(
-            right: 8.0,
+            color: Colors.green,
           ),
         ),
         Column(
@@ -248,14 +241,14 @@ class _HomePageState extends State<HomePage> {
               "Income",
               style: TextStyle(
                 fontSize: 14.0,
-                color: Colors.black,
+                color: Colors.white70,
               ),
             ),
             Text(
               value,
               style: TextStyle(
                 fontSize: 20.0,
-                color: Colors.black,
+                color: Colors.white70,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -270,17 +263,17 @@ class _HomePageState extends State<HomePage> {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: Colors.red,
+            color: Colors.white70,
             borderRadius: BorderRadius.circular(20.0),
           ),
           padding: EdgeInsets.all(8.0),
+          margin: EdgeInsets.only(
+            right: 8.0,
+          ),
           child: Icon(
             Icons.arrow_downward,
             size: 28.0,
-            color: Colors.white,
-          ),
-          margin: EdgeInsets.only(
-            right: 8.0,
+            color: Colors.red,
           ),
         ),
         Column(
@@ -290,14 +283,14 @@ class _HomePageState extends State<HomePage> {
               "Expense",
               style: TextStyle(
                 fontSize: 14.0,
-                color: Colors.black,
+                color: Colors.white70,
               ),
             ),
             Text(
               value,
               style: TextStyle(
                 fontSize: 20.0,
-                color: Colors.black,
+                color: Colors.white70,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -307,76 +300,149 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget expenseTile(int value, String note) {
-    return Container(
-      margin: EdgeInsets.all(8.0),
-      padding: EdgeInsets.all(8.0),
-      decoration: BoxDecoration(
-        color: Color(0xffced4eb),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.arrow_circle_down_outlined,
-                size: 28.0,
-                color: Colors.red,
+  Widget expenseCard(int value, String note) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: SizedBox(
+        height: 80,
+        child: Stack(
+          children: [
+            Container(
+              height: 70,
+              margin: EdgeInsets.only(top: 12),
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white70,
+                boxShadow: [
+                  BoxShadow(
+                      blurRadius: 32, color: Colors.black45, spreadRadius: -8)
+                ],
+                borderRadius: BorderRadius.circular(16),
               ),
-              SizedBox(
-                width: 4,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Image.asset(
+                    'assets/icon.png',
+                    height: 35,
+                    width: 55,
+                  ),
+                  Text(
+                    note,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                  Text(
+                    "- ₹$value",
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.red,
+                      //fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
-              Text("${note}"),
-            ],
-          ),
-          Text(
-            "- $value",
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
             ),
-          )
-        ],
+            Container(
+              width: 132,
+              height: 24,
+              alignment: Alignment.center,
+              margin: EdgeInsets.only(left: 16),
+              padding: EdgeInsets.symmetric(vertical: 4, horizontal: 24),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(36),
+              ),
+              child: Text(
+                "Expense",
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white70,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget incomeTile(int value, String note) {
-    return Container(
-      margin: EdgeInsets.all(8.0),
-      padding: EdgeInsets.all(8.0),
-      decoration: BoxDecoration(
-        color: Color(0xffced4eb),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.arrow_circle_up_outlined,
-                size: 28.0,
-                color: Colors.green,
+  Widget newIncomeCard(int value, String note) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: SizedBox(
+        height: 80,
+        child: Stack(
+          children: [
+            Container(
+              height: 70,
+              margin: EdgeInsets.only(top: 12),
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white70,
+                boxShadow: [
+                  BoxShadow(
+                      blurRadius: 32, color: Colors.black45, spreadRadius: -8)
+                ],
+                borderRadius: BorderRadius.circular(16),
               ),
-              SizedBox(
-                width: 4,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/icon.png',
+                    height: 35,
+                    width: 55,
+                  ),
+                  Text(
+                    note,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        "+ ₹$value",
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.green,
+                          //fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  )
+                ],
               ),
-              Text('$note'),
-            ],
-          ),
-          Text(
-            "+ $value",
-            style: TextStyle(
-              color: Colors.green,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
             ),
-          )
-        ],
+            Container(
+              width: 132,
+              height: 24,
+              alignment: Alignment.center,
+              margin: EdgeInsets.only(left: 16),
+              padding: EdgeInsets.symmetric(vertical: 4, horizontal: 24),
+              decoration: BoxDecoration(
+                color: Colors.green,
+                borderRadius: BorderRadius.circular(36),
+              ),
+              child: Text(
+                "Income",
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white70,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -14,6 +14,7 @@ class DbHelper {
   Future? addData(int amount, String note, String type, DateTime date) {
     var value = {"amount": amount, 'date': date, 'type': type, 'note': note};
     box.add(value);
+    return null;
   }
 
   Future<Map> fetch() {
