@@ -1,7 +1,11 @@
 import 'package:expense_tracer_using_hive/controllers/db_helper.dart';
+import 'package:expense_tracer_using_hive/modals/transection_modal.dart';
 import 'package:expense_tracer_using_hive/pages/add_transection.dart';
+import 'package:expense_tracer_using_hive/widgets/confirm_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracer_using_hive/static.dart' as Static;
+import 'package:hive_flutter/adapters.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -12,24 +16,80 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   DbHelper dbHelper = DbHelper();
-
+  DateTime today = DateTime.now();
+  late SharedPreferences preferences;
+  late Box box;
   int totalBalance = 0;
   int totalIncome = 0;
   int totalExpense = 0;
 
-  getTotalBalance(Map entireData) {
+  List<String> months = [
+    'Jan',
+    'Feb',
+    'March',
+    'Apr',
+    'May',
+    'June',
+    'Jul',
+    'Aug',
+    'Sept',
+    'Oct'
+        'Nov',
+    'Dec'
+  ];
+
+  getTotalBalance(List<TransactionModal> entireData) {
     totalBalance = 0;
     totalExpense = 0;
     totalIncome = 0;
-    entireData.forEach((key, value) {
-      if (value['type'] == 'Income') {
-        totalBalance += (value['amount'] as int);
-        totalIncome += (value['amount'] as int);
-      } else {
-        totalBalance -= (value['amount'] as int);
-        totalExpense += (value['amount'] as int);
+    // entireData.forEach((key, value) {
+    //   if (value['type'] == 'Income') {
+    //     totalBalance += (value['amount'] as int);
+    //     totalIncome += (value['amount'] as int);
+    //   } else {
+    //     totalBalance -= (value['amount'] as int);
+    //     totalExpense += (value['amount'] as int);
+    //   }
+    // });
+    for (TransactionModal data in entireData) {
+      if (data.date.month == today.month) {
+        if (data.type == 'Income') {
+          totalBalance += data.amount;
+          totalIncome += data.amount;
+        } else {
+          totalBalance -= data.amount;
+          totalExpense += data.amount;
+        }
       }
-    });
+    }
+  }
+
+  getPreference() async {
+    preferences = await SharedPreferences.getInstance();
+  }
+
+  Future<List<TransactionModal>> fetch() async {
+    if (box.values.isEmpty) {
+      return Future.value([]);
+    } else {
+      List<TransactionModal> items = [];
+      box.toMap().values.forEach((element) {
+        items.add(TransactionModal(
+            amount: element['amount'] as int,
+            date: element['date'] as DateTime,
+            note: element['note'] as String,
+            type: element['type'] as String));
+      });
+      return items;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getPreference();
+    box = Hive.box('money');
+    fetch();
   }
 
   @override
@@ -56,8 +116,8 @@ class _HomePageState extends State<HomePage> {
           size: 32.0,
         ),
       ),
-      body: FutureBuilder<Map>(
-        future: dbHelper.fetch(),
+      body: FutureBuilder<List<TransactionModal>>(
+        future: fetch(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
@@ -92,7 +152,7 @@ class _HomePageState extends State<HomePage> {
                             width: 30.0,
                           ),
                           Text(
-                            'Hello My Friend',
+                            'Hello ${preferences.getString('Name')}',
                             style: TextStyle(
                               fontSize: 24.0,
                               fontWeight: FontWeight.w700,
@@ -192,18 +252,22 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    reverse: true,
-                    itemCount: (snapshot.data!.length),
-                    itemBuilder: (context, index) {
-                      Map dataAtIndex = snapshot.data![index];
-                      return (dataAtIndex['type'] == 'Income')
-                          ? newIncomeCard(
-                              dataAtIndex['amount'], dataAtIndex['note'])
-                          : expenseCard(
-                              dataAtIndex['amount'], dataAtIndex["note"]);
-                    })
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  reverse: true,
+                  itemCount: (snapshot.data!.length),
+                  itemBuilder: (context, index) {
+                    TransactionModal dataAtIndex = snapshot.data![index];
+                    return (dataAtIndex.type == 'Income')
+                        ? newIncomeCard(dataAtIndex.amount, dataAtIndex.note,
+                            dataAtIndex.date, index)
+                        : expenseCard(dataAtIndex.amount, dataAtIndex.note,
+                            dataAtIndex.date, index);
+                  },
+                ),
+                SizedBox(
+                  height: 60,
+                ),
               ],
             );
           } else {
@@ -300,50 +364,73 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget expenseCard(int value, String note) {
+  Widget expenseCard(int value, String note, DateTime date, int index) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SizedBox(
         height: 80,
         child: Stack(
           children: [
-            Container(
-              height: 70,
-              margin: EdgeInsets.only(top: 12),
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white70,
-                boxShadow: [
-                  BoxShadow(
-                      blurRadius: 32, color: Colors.black45, spreadRadius: -8)
-                ],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Image.asset(
-                    'assets/icon.png',
-                    height: 35,
-                    width: 55,
+            InkWell(
+              onLongPress: () async {
+                bool? response = await showConfirmDialog(context, 'WARNING',
+                    'Do you want to delete this transaction?');
+                if (response != null && response) {
+                  dbHelper.deleteData(index);
+                  setState(() {});
+                } else {}
+              },
+              child: Container(
+                height: 70,
+                margin: EdgeInsets.only(top: 12),
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white70,
+                  boxShadow: [
+                    BoxShadow(
+                        blurRadius: 32, color: Colors.black45, spreadRadius: -8)
+                  ],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(5.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Image.asset(
+                        'assets/icon.png',
+                        height: 35,
+                        width: 55,
+                      ),
+                      Text(
+                        note,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            "- ₹$value",
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.red,
+                              //fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'On ${date.day} ${months[date.month - 1]} ${date.year}',
+                            style: TextStyle(
+                                fontSize: 13, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  Text(
-                    note,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
-                    ),
-                  ),
-                  Text(
-                    "- ₹$value",
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.red,
-                      //fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
             Container(
@@ -371,55 +458,79 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget newIncomeCard(int value, String note) {
+  Widget newIncomeCard(int value, String note, DateTime date, int index) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SizedBox(
         height: 80,
         child: Stack(
           children: [
-            Container(
-              height: 70,
-              margin: EdgeInsets.only(top: 12),
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white70,
-                boxShadow: [
-                  BoxShadow(
-                      blurRadius: 32, color: Colors.black45, spreadRadius: -8)
-                ],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/icon.png',
-                    height: 35,
-                    width: 55,
-                  ),
-                  Text(
-                    note,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                  Row(
+            InkWell(
+              onLongPress: () async {
+                bool? response = await showConfirmDialog(context, 'WARNING',
+                    'Do you want to delete this transaction?');
+                if (response != null && response) {
+                  dbHelper.deleteData(index);
+                  setState(() {});
+                } else {}
+              },
+              child: Container(
+                height: 70,
+                margin: EdgeInsets.only(top: 12),
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white70,
+                  boxShadow: [
+                    BoxShadow(
+                        blurRadius: 32, color: Colors.black45, spreadRadius: -8)
+                  ],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(5.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      Image.asset(
+                        'assets/icon.png',
+                        height: 35,
+                        width: 55,
+                      ),
                       Text(
-                        "+ ₹$value",
+                        note,
                         style: TextStyle(
                           fontSize: 18,
+                          fontWeight: FontWeight.bold,
                           color: Colors.green,
-                          //fontWeight: FontWeight.bold,
                         ),
                       ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                "+ ₹$value",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.green,
+                                  //fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            'On ${date.day} ${months[date.month - 1]} ${date.year}',
+                            style: TextStyle(
+                                fontSize: 13, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                      //SizedBox(width: 1.0),
                     ],
-                  )
-                ],
+                  ),
+                ),
               ),
             ),
             Container(

@@ -1,4 +1,6 @@
+import 'package:expense_tracer_using_hive/pages/add_name.dart';
 import 'package:expense_tracer_using_hive/pages/homepage.dart';
+import 'package:expense_tracer_using_hive/pages/splash.dart';
 import 'package:expense_tracer_using_hive/themes.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -19,7 +21,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Expense Tracer',
       theme: myTheme,
-      home: const HomePage(),
+      home: const Splash(),
     );
   }
 }

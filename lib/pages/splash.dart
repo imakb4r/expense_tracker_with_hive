@@ -1,3 +1,6 @@
+import 'package:expense_tracer_using_hive/controllers/db_helper.dart';
+import 'package:expense_tracer_using_hive/pages/add_name.dart';
+import 'package:expense_tracer_using_hive/pages/homepage.dart';
 import 'package:flutter/material.dart';
 
 class Splash extends StatefulWidget {
@@ -8,6 +11,32 @@ class Splash extends StatefulWidget {
 }
 
 class _SplashState extends State<Splash> {
+  DbHelper dbHelper = DbHelper();
+
+  Future getSetting() async {
+    String? name = await dbHelper.getName();
+    if (name != null) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => HomePage(),
+        ),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => AddName(),
+        ),
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getSetting();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

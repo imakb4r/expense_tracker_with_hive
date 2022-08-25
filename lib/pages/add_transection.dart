@@ -27,7 +27,7 @@ class _AddTranssectionState extends State<AddTranssection> {
     'Aug',
     'Sept',
     'Oct'
-        'Nov',
+    'Nov',
     'Dec'
   ];
 
