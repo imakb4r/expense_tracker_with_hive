@@ -33,8 +33,8 @@ class _HomePageState extends State<HomePage> {
     'Jul',
     'Aug',
     'Sept',
-    'Oct'
-        'Nov',
+    'Oct',
+    'Nov',
     'Dec'
   ];
 
@@ -72,14 +72,17 @@ class _HomePageState extends State<HomePage> {
     if (box.values.isEmpty) {
       return Future.value([]);
     } else {
+      //print(element);
       List<TransactionModal> items = [];
       box.toMap().values.forEach((element) {
+        print(element);
         items.add(TransactionModal(
             amount: element['amount'] as int,
             date: element['date'] as DateTime,
             note: element['note'] as String,
             type: element['type'] as String));
       });
+
       return items;
     }
   }
@@ -125,11 +128,11 @@ class _HomePageState extends State<HomePage> {
             );
           }
           if (snapshot.hasData) {
-            if (snapshot.data!.isEmpty) {
-              return Center(
-                child: Text('No data provided'),
-              );
-            }
+            // if (snapshot.data!.isEmpty) {
+            //   return Center(
+            //     child: Text('No data provided'),
+            //   );
+            // }
             getTotalBalance(snapshot.data!);
             return ListView(
               children: [
@@ -257,11 +260,16 @@ class _HomePageState extends State<HomePage> {
                   reverse: true,
                   itemCount: (snapshot.data!.length),
                   itemBuilder: (context, index) {
-                    TransactionModal dataAtIndex = snapshot.data![index];
+                    TransactionModal dataAtIndex;
+                    try {
+                      dataAtIndex = snapshot.data![index];
+                    } catch (e) {
+                      return Container();
+                    }
                     return (dataAtIndex.type == 'Income')
-                        ? newIncomeCard(dataAtIndex.amount, dataAtIndex.note,
+                        ? incomeTile(dataAtIndex.amount, dataAtIndex.note,
                             dataAtIndex.date, index)
-                        : expenseCard(dataAtIndex.amount, dataAtIndex.note,
+                        : expenseTile(dataAtIndex.amount, dataAtIndex.note,
                             dataAtIndex.date, index);
                   },
                 ),
@@ -364,7 +372,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget expenseCard(int value, String note, DateTime date, int index) {
+  Widget expenseTile(int value, String note, DateTime date, int index) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SizedBox(
@@ -458,7 +466,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget newIncomeCard(int value, String note, DateTime date, int index) {
+  Widget incomeTile(int value, String note, DateTime date, int index) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SizedBox(
@@ -467,9 +475,9 @@ class _HomePageState extends State<HomePage> {
           children: [
             InkWell(
               onLongPress: () async {
-                bool? response = await showConfirmDialog(context, 'WARNING',
+                bool? answer = await showConfirmDialog(context, 'WARNING',
                     'Do you want to delete this transaction?');
-                if (response != null && response) {
+                if (answer != null && answer) {
                   dbHelper.deleteData(index);
                   setState(() {});
                 } else {}

@@ -14,7 +14,7 @@ class DbHelper {
   }
 
   Future deleteData(int index) async {
-    await box.delete(index);
+    await box.deleteAt(index);
   }
 
   Future? addData(int amount, String note, String type, DateTime date) {
